@@ -4,6 +4,49 @@ import numpy as np
 from scipy.stats import median_abs_deviation
 
 
+def read_rpg_spec(filename, ts=0.1, chans=8192, cal_slope=10.00405331,
+                  cal_offset=147.24685047, calibrate=True):
+    """Read a 2D timeseries recorded by an RPG FFT spectrometer (.spec file).
+
+    The file holds one record per time stamp, each starting with '*',
+    followed by a header line and one value per channel per line. The last
+    record is left out, as it may be incomplete.
+
+    Raw values are calibrated to physical units (mW per channel) with
+    10**((cal_slope * log10(raw / ts) - cal_offset) / 10) / chans.
+
+    Parameters
+    ----------
+    filename : str
+        Path to the .spec file.
+    ts : float
+        Integration time of each time stamp, in seconds.
+    chans : int
+        Number of spectrometer channels, used in the calibration.
+    cal_slope, cal_offset : float
+        Calibration constants of the spectrometer.
+    calibrate : bool
+        If False, return the raw values.
+
+    Returns
+    -------
+    2D ndarray, shape (n_times, n_channels)
+        One row per time stamp, in mW if calibrated.
+    """
+    with open(filename, 'r') as file:
+        records = file.read().split('*')[1:]
+
+    # number of lines in a record: header, channel values, trailing empty line
+    nlines = len(records[0].split('\n'))
+    spec = np.zeros((len(records) - 1, nlines - 2))
+    for i in range(len(records) - 1):
+        spec[i] = np.array(records[i].split('\n')[1:nlines - 1], dtype=float)
+
+    if calibrate:
+        spec = pow(10, (cal_slope * np.log10(spec / ts) - cal_offset) / 10) / chans
+    return spec
+
+
 def mean_stack(tms):
     """Unweighted mean stack of a set of timeseries, ignoring NaNs.
 
