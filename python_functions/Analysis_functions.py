@@ -98,3 +98,52 @@ def weighted_mean_stack(tms, wts):
     wsum = np.sum(np.where(use, w, 0.), axis=0)
     with np.errstate(invalid='ignore', divide='ignore'):
         return np.sum(np.where(use, w * tms, 0.), axis=0) / wsum
+
+
+def autodifference(x, lag=1):
+    """Autodifference of a timeseries, (x[i] - x[i+lag]) / sqrt(2).
+
+    Differencing removes slow (correlated) variations, and dividing by
+    sqrt(2) keeps the rms of uncorrelated (white) noise unchanged, so the
+    standard deviation of the result estimates the white noise level.
+
+    Parameters
+    ----------
+    x : 1D array_like
+        Timeseries.
+    lag : int
+        Separation, in samples, of the differenced points.
+
+    Returns
+    -------
+    1D ndarray, shape (len(x) - lag,)
+    """
+    x = np.asarray(x, dtype=float)
+    return (x[:-lag] - x[lag:]) / np.sqrt(2)
+
+
+def power_spectrum(x, dt):
+    """One-sided power spectral density of a timeseries.
+
+    PSD = |FFT(x)|**2 * dt, with an orthonormal FFT, so white noise of rms
+    sigma has a flat PSD of sigma**2 * dt. The zero-frequency (mean) term
+    is left out.
+
+    Parameters
+    ----------
+    x : 1D array_like
+        Timeseries, sampled every `dt`.
+    dt : float
+        Sampling interval, in seconds.
+
+    Returns
+    -------
+    f : 1D ndarray
+        Frequencies, in Hz.
+    psd : 1D ndarray
+        PSD at each frequency, in (units of x)**2 / Hz.
+    """
+    x = np.asarray(x, dtype=float)
+    psd = np.absolute(np.fft.rfft(x, norm='ortho'))**2 * dt
+    f = np.fft.rfftfreq(x.shape[0], dt)
+    return f[1:], psd[1:]
