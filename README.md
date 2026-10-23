@@ -1,7 +1,7 @@
 # Python_snippets
 
 A bunch of code snippets and subroutines in Python 3, packaged within Jupyter notebooks. The code has been repurposed from various codes I have written for mostly personal use in my research work over more than a 10 year period - I have suitably modified Python 2 codes.
-Each notebook will also contains sections generating test dataset(s), and a test run of the snippet/subroutine using the generated dataset(s).
+The reusable code lives as functions in `python_functions/`, and each notebook in `example_notebooks/` shows how to use them, either on generated test dataset(s) or on the real example data included in the repository.
 
 ## Repository layout
 
@@ -22,6 +22,33 @@ Python_snippets/
 ```
 
 The notebooks import the functions from `python_functions/` by adding that folder to the Python path in their first code cell. This uses a path relative to the notebook (`../python_functions`), so run each notebook from inside `example_notebooks/`, which Jupyter and VS Code do by default. The functions can also be used in your own scripts: add `python_functions/` to your Python path, then e.g. `from Analysis_functions import mean_stack`.
+
+## Functions
+
+Each function has a docstring describing its parameters and return values (e.g. `help(power_spectrum)`).
+
+### `python_functions/Analysis_functions.py`
+
+| Function | What it does | Used in |
+|---|---|---|
+| `read_rpg_spec(filename, ts=0.1, chans=8192, ...)` | Reads an RPG FFT spectrometer `.spec` file into a (time stamps × channels) array, calibrated to mW | 2Dtimeseries_1, 2Dtimeseries_2 |
+| `mean_stack(tms)` | Unweighted mean of a set of timeseries (one per row), ignoring NaNs | Stacking_timeseries |
+| `median_stack(tms)` | Unweighted median of a set of timeseries, ignoring NaNs | Stacking_timeseries |
+| `noise_weights(tms, n_edge=100, mad_threshold=5.0, power=2)` | Noise of each timeseries from its signal-free ends, rejection of outlying low-noise series, and normalized 1/rms² (or 1/rms) weights | Stacking_timeseries |
+| `weighted_mean_stack(tms, wts)` | Weighted mean of a set of timeseries, skipping NaN weights and data | Stacking_timeseries |
+| `autodifference(x, lag=1)` | (x[i] − x[i+lag]) / √2, whose rms estimates the white noise level | 2Dtimeseries_1 |
+| `power_spectrum(x, dt)` | One-sided power spectral density, \|FFT\|² · dt, without the zero-frequency term | 2Dtimeseries_1, 2Dtimeseries_2 |
+| `gain_match(x, ref)` | Rescales a timeseries so its mean matches that of a reference | 2Dtimeseries_2 |
+| `difference_timeseries(x1, x2)` | Fits x2 = m·x1 + c and returns the difference (m·x1 + c − x2) / √2, with m and c | 2Dtimeseries_2 |
+
+### `python_functions/plotting_functions.py`
+
+| Function | What it does | Used in |
+|---|---|---|
+| `plot_with_transparency(x, y, yu, yd, color='cyan', alpha=0.2, filename=None, ...)` | Line plot with a semi-transparent band between yu and yd, optionally saved as PNG | Plots_with_transparency |
+| `waterfall_plot(data, xlabel, ylabel, cbar_label=None, aspect=3, ...)` | 2D image (waterfall) plot of a 2D timeseries with a colour bar, optionally saved as PNG | 2Dtimeseries_1 |
+
+Both plotting functions return the matplotlib `fig, ax`, so the plots can be customised further.
 
 ## Setting up a virtual environment
 
