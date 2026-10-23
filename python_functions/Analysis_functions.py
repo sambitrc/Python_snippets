@@ -147,3 +147,50 @@ def power_spectrum(x, dt):
     psd = np.absolute(np.fft.rfft(x, norm='ortho'))**2 * dt
     f = np.fft.rfftfreq(x.shape[0], dt)
     return f[1:], psd[1:]
+
+
+def gain_match(x, ref):
+    """Scale a timeseries so that its mean (DC level) matches that of `ref`.
+
+    Parameters
+    ----------
+    x : 1D array_like
+        Timeseries to rescale.
+    ref : 1D array_like
+        Reference timeseries.
+
+    Returns
+    -------
+    1D ndarray
+        x * mean(ref) / mean(x)
+    """
+    x = np.asarray(x, dtype=float)
+    return x * np.mean(ref) / np.mean(x)
+
+
+def difference_timeseries(x1, x2):
+    """Difference two correlated timeseries after removing their linear relation.
+
+    A straight line x2 = m * x1 + c is fitted by least squares, and the
+    difference is the fit's prediction of x2 minus x2 itself,
+    (m * x1 + c - x2) / sqrt(2). This removes the variations common to both
+    inputs; dividing by sqrt(2) keeps the rms of uncorrelated noise of equal
+    level in the two inputs unchanged.
+
+    Parameters
+    ----------
+    x1, x2 : 1D array_like, same length
+        Timeseries to difference.
+
+    Returns
+    -------
+    d : 1D ndarray
+        Difference timeseries.
+    m, c : float
+        Slope and offset of the fitted line, c in the units of x2.
+    """
+    x1 = np.asarray(x1, dtype=float)
+    x2 = np.asarray(x2, dtype=float)
+    m, c = np.polyfit(x1, x2, 1)
+    d = (m * x1 + c - x2) / np.sqrt(2)
+    return d, m, c
